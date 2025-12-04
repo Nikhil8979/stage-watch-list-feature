@@ -7,13 +7,16 @@ import bcrypt from "bcryptjs";
 describe("[POST] /auth/login", async () => {
   beforeAll(async () => {
     await resetDb();
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: { username: "demoUser" },
+      update: {},
+      create: {
         username: "demoUser",
         password: await bcrypt.hash("password123", 10),
       },
     });
   });
+
   it("should login successfully and return 200", async () => {
     const response = await request(app).post("/api/v1/auth/login").send({
       username: "demoUser",

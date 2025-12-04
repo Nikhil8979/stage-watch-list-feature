@@ -4,6 +4,7 @@ import { app } from "..";
 import prisma from "./helpers/prisma-test";
 import resetDb from "./helpers/reset-db";
 import bcrypt from "bcryptjs";
+import { RedisCache } from "../lib/RedisCache";
 
 describe("[GET] /api/v1/watch-list", () => {
   let token: string;
@@ -13,8 +14,10 @@ describe("[GET] /api/v1/watch-list", () => {
   beforeAll(async () => {
     await resetDb();
 
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      where: { username: "demoUser" },
+      update: {},
+      create: {
         username: "demoUser",
         password: await bcrypt.hash("password123", 10),
       },
@@ -45,7 +48,13 @@ describe("[GET] /api/v1/watch-list", () => {
   });
 
   beforeEach(async () => {
+
     await prisma.watchList.deleteMany();
+    const redis = RedisCache.getInstance();
+    const keys = await redis.getClient().keys(`user:${userId}:list:*`);
+    for (const key of keys) {
+      await redis.evict(key);
+    }
   });
 
   afterAll(async () => {
@@ -64,6 +73,9 @@ describe("[GET] /api/v1/watch-list", () => {
   });
 
   it("should return watchlist items for user", async () => {
+    console.log({
+      contentIds,
+    });
     await prisma.watchList.createMany({
       data: [
         { userId, contentId: contentIds[0] },
@@ -71,11 +83,14 @@ describe("[GET] /api/v1/watch-list", () => {
       ],
     });
 
+    const redis = RedisCache.getInstance();
+    await redis.incr(`user:${userId}:watchlist:VERSION`);
+
     const response = await request(app)
       .get("/api/v1/watch-list")
       .set("Authorization", `Bearer ${token}`)
       .query({ limit: 10 });
-
+    console.log(response.body, "---- body ----");
     expect(response.status).toBe(200);
     expect(response.body.data.items).toHaveLength(2);
 
@@ -105,6 +120,9 @@ describe("[GET] /api/v1/watch-list", () => {
         { userId, contentId: contentIds[2] },
       ],
     });
+
+    const redis = RedisCache.getInstance();
+    await redis.incr(`user:${userId}:watchlist:VERSION`);
 
     const firstResponse = await request(app)
       .get("/api/v1/watch-list")

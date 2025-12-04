@@ -13,8 +13,10 @@ describe("[DELETE] /api/v1/watch-list", () => {
   beforeAll(async () => {
     await resetDb();
 
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      where: { username: "demoUser" },
+      update: {},
+      create: {
         username: "demoUser",
         password: await bcrypt.hash("password123", 10),
       },

@@ -34,12 +34,15 @@ const addItemToWatchList: RequestHandler = async (req, res) => {
   if (isItemExist) {
     return res.status(400).json(error({ message: "Item already exists" }));
   }
+
   const item = await prisma.watchList.create({
     data: {
       userId,
       contentId,
     },
   });
+  const redis = RedisCache.getInstance();
+  await redis.incr(`user:${userId}:watchlist:VERSION`);
   return res.status(201).json(
     success({
       data: {
@@ -54,19 +57,18 @@ const getWatchList: RequestHandler = async (req, res) => {
   const { limit, cursor } = req.query as WatchListSchema;
   const { id: userId } = req.user;
 
-  const cacheKey = `user:${userId}:list:${limit || "default"}:${
-    cursor || "start"
-  }`;
   const TTL_SECONDS = 60 * 5;
   const redis = RedisCache.getInstance();
-  const cachedList = await redis.get(cacheKey);
-  if (cachedList) {
-    const watchList = JSON.parse(cachedList);
-    return res.status(200).json(
-      success({
-        data: { items: watchList },
-      })
-    );
+  const masterVersion =
+    (await redis.get(`user:${userId}:watchlist:VERSION`)) || "1";
+  const pageCacheKey = `user:${userId}:list:${limit || "default"}:${
+    cursor || "start"
+  }:${masterVersion}`;
+
+  const cachedData = await redis.get(pageCacheKey);
+  if (cachedData) {
+    const watchList = JSON.parse(cachedData);
+    return res.status(200).json(success({ data: { items: watchList } }));
   }
   const watchList = await prisma.watchList.findMany({
     where: {
@@ -114,7 +116,7 @@ const getWatchList: RequestHandler = async (req, res) => {
     skip: cursor ? 1 : 0,
     cursor: cursor ? { id: cursor } : undefined,
   });
-  await redis.set(cacheKey, JSON.stringify(watchList), TTL_SECONDS);
+  await redis.set(pageCacheKey, JSON.stringify(watchList), TTL_SECONDS);
   return res.status(200).json(
     success({
       data: {
@@ -146,6 +148,8 @@ const removeItemFromWatchList: RequestHandler = async (req, res) => {
       },
     },
   });
+  const redis = RedisCache.getInstance();
+  await redis.incr(`user:${userId}:watchlist:VERSION`);
   return res.status(200).json(
     success({
       data: {
