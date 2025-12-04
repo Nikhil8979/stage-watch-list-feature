@@ -1,10 +1,15 @@
 {
   "name": "stage",
   "version": "1.0.0",
-
   "description": "",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint src/**/*.ts --quiet",
+    "lint:fix": "eslint src/**/*.ts --fix --quiet",
+    "start": "ts-node src/bin.ts",
+    "start:prod": "node dist/bin.js",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/bin.ts",
     "test": "vitest",
     "db:seed": "ts-node prisma/seed.ts"
   },
@@ -28,6 +33,11 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
     "@types/supertest": "^6.0.3",
+    "@eslint/js": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "typescript-eslint": "^8.48.1",
     "prisma": "^7.1.0",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",

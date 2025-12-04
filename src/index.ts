@@ -5,7 +5,7 @@ import { errorHandler } from "./middleware/errorHandler";
 export const app = express();
 
 const corsOptions = {
-  origin: process.env.NEXT_APP_BASE_URL,
+  origin: process.env.APP_BASE_URL,
   credentials: true,
 };
 

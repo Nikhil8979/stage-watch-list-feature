@@ -1,0 +1,113 @@
+image: node:22.11.0
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: "Build"
+            script:
+              - echo "Your build is being started"
+              - pnpm install
+              - pnpm prisma generate
+              - pnpm run build
+            caches:
+              - node
+
+        - step:
+            name: "Lint"
+            script:
+              - pnpm install
+              - echo "Your lint is being started"
+              - pnpm run lint
+            caches:
+              - node
+
+        - step:
+            name: "Test"
+            script:
+              - pnpm install
+              - pnpm run test
+            caches:
+              - node
+
+  branches:
+    master:
+      - step:
+          name: "Deploy Code to Production"
+          deployment: "Production"
+          image: node:22.11.0
+          script:
+            - echo "Installing dependencies"
+            - pnpm ci --include=dev
+            - pnpm prisma generate
+            - pnpm run build
+            - |
+              cat <<EOF > .env
+              PORT=$PORT
+              DATABASE_URL=$DATABASE_URL
+              REDIS_HOST=$REDIS_HOST
+              REDIS_PORT=$REDIS_PORT
+              REDIS_PASSWORD=$REDIS_PASSWORD
+              REDIS_USERNAME=$REDIS_USERNAME
+              REDIS_MAX_RETRIES_PER_REQUEST=$REDIS_MAX_RETRIES_PER_REQUEST
+              JWT_SECRET=$JWT_SECRET
+              APP_BASE_URL=$APP_BASE_URL
+              EOF
+
+            - tar -czf build.tar.gz dist .env
+            - chmod +x deploy.sh
+            - pipe: atlassian/rsync-deploy:0.13.0
+              variables:
+                USER: $SSH_USER
+                SERVER: $SSH_SERVER
+                REMOTE_PATH: $REMOTE_PATH
+                LOCAL_PATH: "build.tar.gz deploy.sh"
+                SSH_KEY: $BITBUCKET_SSH_KEY
+
+            - pipe: atlassian/ssh-run:0.5.0
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SSH_SERVER
+                MODE: "script"
+                SSH_KEY: $BITBUCKET_SSH_KEY
+                COMMAND: "./deploy.sh"
+
+    staging:
+      - step:
+          name: "Deploy Code to Staging"
+          deployment: "Staging"
+          image: node:22.11.0
+          script:
+            - echo "Installing dependencies"
+            - pnpm ci --include=dev
+            - pnpm prisma generate
+            - pnpm run build
+            - |
+              cat <<EOF > .env
+              PORT=$PORT
+              DATABASE_URL=$DATABASE_URL
+              REDIS_HOST=$REDIS_HOST
+              REDIS_PORT=$REDIS_PORT
+              REDIS_PASSWORD=$REDIS_PASSWORD
+              REDIS_USERNAME=$REDIS_USERNAME
+              REDIS_MAX_RETRIES_PER_REQUEST=$REDIS_MAX_RETRIES_PER_REQUEST
+              JWT_SECRET=$JWT_SECRET
+              APP_BASE_URL=$APP_BASE_URL
+              EOF
+            - tar -czf build.tar.gz dist .env
+            - chmod +x deploy.sh
+            - pipe: atlassian/rsync-deploy:0.13.0
+              variables:
+                USER: $SSH_USER
+                SERVER: $SSH_SERVER
+                REMOTE_PATH: $REMOTE_PATH
+                LOCAL_PATH: "build.tar.gz deploy.sh"
+                SSH_KEY: $BITBUCKET_SSH_KEY
+
+            - pipe: atlassian/ssh-run:0.5.0
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SSH_SERVER
+                MODE: "script"
+                SSH_KEY: $BITBUCKET_SSH_KEY
+                COMMAND: "./deploy.sh"

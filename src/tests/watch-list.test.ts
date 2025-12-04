@@ -73,9 +73,6 @@ describe("[GET] /api/v1/watch-list", () => {
   });
 
   it("should return watchlist items for user", async () => {
-    console.log({
-      contentIds,
-    });
     await prisma.watchList.createMany({
       data: [
         { userId, contentId: contentIds[0] },
@@ -90,7 +87,7 @@ describe("[GET] /api/v1/watch-list", () => {
       .get("/api/v1/watch-list")
       .set("Authorization", `Bearer ${token}`)
       .query({ limit: 10 });
-    console.log(response.body, "---- body ----");
+
     expect(response.status).toBe(200);
     expect(response.body.data.items).toHaveLength(2);
 
