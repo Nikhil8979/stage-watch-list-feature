@@ -121,7 +121,8 @@ To run the application in development mode, you can use one of the following met
 #### Option 1: Using ts-node (Recommended for development)
 
 ```bash
-ts-node src/bin.ts
+pnpm ts-node src/bin.ts
+
 ```
 
 #### Option 2: Build and Run
@@ -171,12 +172,10 @@ pnpm test
 
 ### Run Tests in Watch Mode
 
-
-
-### Run Tests 
+### Run Tests
 
 ```bash
-pnpm test 
+pnpm test
 ```
 
 ### Test Configuration
@@ -271,4 +270,3 @@ Fast existence checks using unique indexes.
 Single Redis + DB connection pools for efficient high-traffic handling.
 
 Overall: very fast reads, optimized writes, and scalable for millions of users.
-
