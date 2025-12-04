@@ -43,8 +43,7 @@ export const wrapRequestHandler =
   (fn: RequestHandler): RequestHandler =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await fn(req, res, next);
-      // if (result !== undefined) res.json(result);
+      await fn(req, res, next);
     } catch (err) {
       next(err);
     }

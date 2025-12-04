@@ -2,10 +2,12 @@ import { RequestHandler } from "express";
 import { prisma } from "../lib/prisma";
 import { error, success } from "../utils/response";
 import { WatchListSchema } from "../zod/watchList";
+import { RedisCache } from "../lib/RedisCache";
 
 const addItemToWatchList: RequestHandler = async (req, res) => {
   const { contentId } = req.body;
   const { id: userId } = req.user;
+
   const isContentExist = await prisma.content.findUnique({
     where: {
       id: contentId,
@@ -52,6 +54,20 @@ const getWatchList: RequestHandler = async (req, res) => {
   const { limit, cursor } = req.query as WatchListSchema;
   const { id: userId } = req.user;
 
+  const cacheKey = `user:${userId}:list:${limit || "default"}:${
+    cursor || "start"
+  }`;
+  const TTL_SECONDS = 60 * 5;
+  const redis = RedisCache.getInstance();
+  const cachedList = await redis.get(cacheKey);
+  if (cachedList) {
+    const watchList = JSON.parse(cachedList);
+    return res.status(200).json(
+      success({
+        data: { items: watchList },
+      })
+    );
+  }
   const watchList = await prisma.watchList.findMany({
     where: {
       userId,
@@ -98,7 +114,7 @@ const getWatchList: RequestHandler = async (req, res) => {
     skip: cursor ? 1 : 0,
     cursor: cursor ? { id: cursor } : undefined,
   });
-
+  await redis.set(cacheKey, JSON.stringify(watchList), TTL_SECONDS);
   return res.status(200).json(
     success({
       data: {

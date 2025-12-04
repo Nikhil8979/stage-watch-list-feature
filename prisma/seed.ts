@@ -9,7 +9,16 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("Starting seeding...");
-
+  await prisma.$transaction([
+    prisma.watchList.deleteMany(),
+    prisma.movieDetail.deleteMany(),
+    prisma.tVShowEpisode.deleteMany(),
+    prisma.tVShowDetail.deleteMany(),
+    prisma.contentGenre.deleteMany(),
+    prisma.genre.deleteMany(),
+    prisma.content.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
   //  Seed user
   const passwordHash = await bcrypt.hash("password123", 10);
 
@@ -20,7 +29,7 @@ async function main() {
     },
   });
 
-  console.log("User created:", user.username);
+  console.log("✔ User created:", user.username);
 
   // Seed Genres
   const genres = await prisma.genre.createMany({

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ContentType } from "../generated/prisma/enums";
 
 export const AddItemToWatchListSchema = z
   .object({
