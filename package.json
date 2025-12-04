@@ -9,7 +9,6 @@
     "start": "ts-node src/bin.ts",
     "start:prod": "node dist/bin.js",
     "build": "tsc",
-    "dev": "ts-node-dev --respawn --transpile-only src/bin.ts",
     "test": "vitest",
     "db:seed": "ts-node prisma/seed.ts"
   },

@@ -1,3 +1,4 @@
+/// <reference path="./global.d.ts" />
 import { app } from ".";
 import { PORT } from "./config";
 

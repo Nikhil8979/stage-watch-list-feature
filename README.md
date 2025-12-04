@@ -128,7 +128,7 @@ ts-node src/bin.ts
 
 ```bash
 # Build the TypeScript code
-npx tsc
+pnpm tsc
 
 # Run the compiled JavaScript
 node dist/bin.js
