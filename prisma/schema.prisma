@@ -1,0 +1,87 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  watchList WatchList[]
+}
+enum ContentType {
+  MOVIE
+  TVSHOW
+}
+
+model Content {
+  id          String       @id @default(uuid())
+  type        ContentType
+  title       String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  movieDetail MovieDetail?
+  tvShowDetail TVShowDetail?
+  genres      ContentGenre[]
+  watchList   WatchList[]
+}
+
+model ContentGenre {
+  contentId String
+  genreId   String
+  content   Content @relation(fields: [contentId], references: [id])
+  genre     Genre    @relation(fields: [genreId], references: [id])
+  @@id([contentId, genreId])
+} 
+
+model Genre {
+  id        String @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content   ContentGenre[]
+}
+
+model MovieDetail {
+  id        String @id 
+  director  String
+  releaseDate DateTime?
+  content   Content @relation(fields:[id], references:[id])
+}
+
+model TVShowDetail {
+  id        String @id
+  totalEpisode  Int
+  content   Content @relation(fields:[id], references:[id])
+  episodes  TVShowEpisode[]
+}
+
+model TVShowEpisode {
+  id        String @id @default(uuid())
+  tvShowId String
+  episodeNumber Int
+  seasonNumber Int
+  releaseDate DateTime
+  tvShow     TVShowDetail @relation(fields: [tvShowId], references: [id])
+}
+
+model WatchList {
+  id        String   @id @default(uuid())
+  userId    String
+  contentId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  content   Content  @relation(fields: [contentId], references: [id])
+  @@unique([userId, contentId])
+  @@index([userId])
+
+}
